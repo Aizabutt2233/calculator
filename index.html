@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>3D AIZA Calculator</title>
+  <style>
+    :root {
+      --bg-color: white;
+      --calc-body: #0a0f16;
+      --calc-border: #334155;
+      --display-bg: #090d16;
+      --btn-num-top: #3b82f6;
+      --btn-num-shadow: #1d4ed8;
+      --btn-op-top: #f59e0b;
+      --btn-op-shadow: #b45309;
+      --btn-sci-top: #2b0c74;
+      --btn-sci-shadow: #6d28d9;
+      --btn-clear-top: #ef4444;
+      --btn-clear-shadow: #b91c1c;
+      --btn-eq-top: #10b981;
+      --btn-eq-shadow: #047857;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden; /* Prevents page scrollbars */
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: radial-gradient(circle at center, #1e1b4b 0%, var(--bg-color) 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: clamp(8px, 2vh, 16px);
+      perspective: 1000px;
+    }
+
+    /* 3D Calculator Container - Fixed Height Screen Fitting */
+    .calculator-3d {
+      width: 100%;
+      max-width: 440px;
+      height: 100%;
+      max-height: calc(100vh - 20px);
+      max-height: calc(100dvh - 20px);
+      background: linear-gradient(145deg, var(--calc-body), #0f172a);
+      padding: clamp(12px, 2vh, 20px);
+      border-radius: clamp(16px, 3vh, 24px);
+      box-shadow: 
+        0 15px 35px rgba(0, 0, 0, 0.7),
+        0 8px 0px #090d16,
+        inset 0 2px 2px rgba(255, 255, 255, 0.2);
+      transform: rotateX(4deg);
+      transition: transform 0.3s ease;
+      border: 1px solid var(--calc-border);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .calculator-3d:hover {
+      transform: rotateX(0deg);
+    }
+
+    /* Header Accent */
+    .brand {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #94a3b8;
+      font-size: clamp(0.65rem, 1.5vh, 0.8rem);
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      margin-bottom: clamp(6px, 1vh, 10px);
+      flex-shrink: 0;
+    }
+
+    .solar-panel {
+      width: clamp(45px, 10vw, 60px);
+      height: 12px;
+      background: linear-gradient(90deg, #451a03, #78350f, #451a03);
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.8);
+    }
+
+    /* Display Screen Box */
+    .display-container {
+      position: relative;
+      background: var(--display-bg);
+      border-radius: 12px;
+      padding: clamp(8px, 1.5vh, 14px);
+      margin-bottom: clamp(10px, 1.5vh, 16px);
+      box-shadow: 
+        inset 0 6px 10px rgba(0, 0, 0, 0.9),
+        inset 0 -2px 4px rgba(255, 255, 255, 0.05),
+        0 0 0 2px rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .previous-expression {
+      min-height: 16px;
+      color: #00f2fe;
+      font-size: clamp(0.7rem, 1.5vh, 0.85rem);
+      text-align: right;
+      opacity: 0.8;
+      word-break: break-all;
+    }
+
+    .current-display {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #38bdf8;
+      font-size: clamp(1.4rem, 3.5vh, 2rem);
+      font-weight: 700;
+      text-align: right;
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+      word-break: break-all;
+    }
+
+    /* Keypad Grid expanding to fill available space */
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      grid-template-rows: repeat(6, 1fr);
+      gap: clamp(4px, 1vh, 8px);
+      flex-grow: 1;
+    }
+
+    /* 3D Button Styling */
+    .btn {
+      position: relative;
+      border: none;
+      outline: none;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: clamp(0.75rem, 2vh, 1rem);
+      font-weight: 700;
+      color: #ffffff;
+      border-radius: clamp(6px, 1.2vh, 10px);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.1s ease;
+      transform: translateY(0);
+    }
+
+    .btn-sci {
+      background: var(--btn-sci-top);
+      box-shadow: 0 clamp(2px, 0.5vh, 4px) 0 var(--btn-sci-shadow), 0 4px 10px rgba(0,0,0,0.4);
+    }
+
+    .btn-num {
+      background: var(--btn-num-top);
+      box-shadow: 0 clamp(2px, 0.5vh, 4px) 0 var(--btn-num-shadow), 0 4px 10px rgba(0,0,0,0.4);
+    }
+
+    .btn-op {
+      background: var(--btn-op-top);
+      box-shadow: 0 clamp(2px, 0.5vh, 4px) 0 var(--btn-op-shadow), 0 4px 10px rgba(0,0,0,0.4);
+    }
+
+    .btn-clear {
+      background: var(--btn-clear-top);
+      box-shadow: 0 clamp(2px, 0.5vh, 4px) 0 var(--btn-clear-shadow), 0 4px 10px rgba(0,0,0,0.4);
+    }
+
+    .btn-eq {
+      background: var(--btn-eq-top);
+      box-shadow: 0 clamp(2px, 0.5vh, 4px) 0 var(--btn-eq-shadow), 0 4px 10px rgba(0,0,0,0.4);
+      grid-column: span 2;
+    }
+
+    .btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+    @media (max-width: 480px) {
+      .calculator-3d {
+        transform: none;
+        max-height: 100%;
+        border-radius: 16px;
+      }
+      .calculator-3d:hover {
+        transform: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="calculator-3d">
+    <div class="brand">
+      <span>FX-3D SCIENTIFIC</span>
+      <div class="solar-panel"></div>
+    </div>
+
+    <div class="display-container">
+      <div class="previous-expression" id="prev-expr"></div>
+      <input type="text" class="current-display" id="display" value="0" readonly />
+    </div>
+
+    <div class="keypad">
+      <button class="btn btn-sci" onclick="appendFunc('sin')">sin</button>
+      <button class="btn btn-sci" onclick="appendFunc('cos')">cos</button>
+      <button class="btn btn-sci" onclick="appendFunc('tan')">tan</button>
+      <button class="btn btn-clear" onclick="clearDisplay()">AC</button>
+      <button class="btn btn-clear" onclick="deleteChar()">DEL</button>
+
+      <button class="btn btn-sci" onclick="appendFunc('log')">log</button>
+      <button class="btn btn-sci" onclick="appendFunc('ln')">ln</button>
+      <button class="btn btn-sci" onclick="appendFunc('sqrt')">√x</button>
+      <button class="btn btn-sci" onclick="appendValue('^')">x^y</button>
+      <button class="btn btn-op" onclick="appendValue('/')">÷</button>
+
+      <button class="btn btn-sci" onclick="appendValue('(')">(</button>
+      <button class="btn btn-num" onclick="appendValue('7')">7</button>
+      <button class="btn btn-num" onclick="appendValue('8')">8</button>
+      <button class="btn btn-num" onclick="appendValue('9')">9</button>
+      <button class="btn btn-op" onclick="appendValue('*')">×</button>
+
+      <button class="btn btn-sci" onclick="appendValue(')')">)</button>
+      <button class="btn btn-num" onclick="appendValue('4')">4</button>
+      <button class="btn btn-num" onclick="appendValue('5')">5</button>
+      <button class="btn btn-num" onclick="appendValue('6')">6</button>
+      <button class="btn btn-op" onclick="appendValue('-')">-</button>
+
+      <button class="btn btn-sci" onclick="appendValue('π')">π</button>
+      <button class="btn btn-num" onclick="appendValue('1')">1</button>
+      <button class="btn btn-num" onclick="appendValue('2')">2</button>
+      <button class="btn btn-num" onclick="appendValue('3')">3</button>
+      <button class="btn btn-op" onclick="appendValue('+')">+</button>
+
+      <button class="btn btn-sci" onclick="appendValue('e')">e</button>
+      <button class="btn btn-num" onclick="appendValue('0')">0</button>
+      <button class="btn btn-num" onclick="appendValue('.')">.</button>
+      <button class="btn btn-eq" onclick="calculate()">=</button>
+    </div>
+  </div>
+
+  <script>
+    const display = document.getElementById('display');
+    const prevExpr = document.getElementById('prev-expr');
+    let isEvaluated = false;
+
+    function appendValue(val) {
+      if (display.value === '0' || display.value === 'Error' || isEvaluated) {
+        if (isOperator(val) && display.value !== 'Error') {
+          isEvaluated = false;
+        } else {
+          display.value = '';
+          isEvaluated = false;
+        }
+      }
+      display.value += val;
+    }
+
+    function appendFunc(funcName) {
+      if (display.value === '0' || display.value === 'Error' || isEvaluated) {
+        display.value = '';
+        isEvaluated = false;
+      }
+      display.value += funcName + '(';
+    }
+
+    function isOperator(char) {
+      return ['+', '-', '*', '/', '^'].includes(char);
+    }
+
+    function clearDisplay() {
+      display.value = '0';
+      prevExpr.innerText = '';
+      isEvaluated = false;
+    }
+
+    function deleteChar() {
+      if (isEvaluated || display.value === 'Error') {
+        clearDisplay();
+        return;
+      }
+      display.value = display.value.slice(0, -1);
+      if (display.value === '') {
+        display.value = '0';
+      }
+    }
+
+    function calculate() {
+      try {
+        let rawExpression = display.value;
+        prevExpr.innerText = rawExpression + ' =';
+
+        let parsedExpression = rawExpression
+          .replace(/π/g, 'Math.PI')
+          .replace(/e/g, 'Math.E')
+          .replace(/sin\(/g, 'Math.sin(')
+          .replace(/cos\(/g, 'Math.cos(')
+          .replace(/tan\(/g, 'Math.tan(')
+          .replace(/log\(/g, 'Math.log10(')
+          .replace(/ln\(/g, 'Math.log(')
+          .replace(/sqrt\(/g, 'Math.sqrt(')
+          .replace(/\^/g, '**');
+
+        let result = Function('"use strict"; return (' + parsedExpression + ')')();
+
+        if (result !== undefined && !isNaN(result)) {
+          display.value = Number.isInteger(result) ? result : Number(result.toFixed(8)).toString();
+        } else {
+          display.value = 'Error';
+        }
+        isEvaluated = true;
+      } catch (err) {
+        display.value = 'Error';
+        isEvaluated = true;
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if ((e.key >= '0' && e.key <= '9') || ['+', '-', '*', '/', '.', '(', ')'].includes(e.key)) {
+        appendValue(e.key);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        calculate();
+      } else if (e.key === 'Backspace') {
+        deleteChar();
+      } else if (e.key === 'Escape') {
+        clearDisplay();
+      }
+    });
+  </script>
+</body>
+</html>
